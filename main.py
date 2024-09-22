@@ -25,9 +25,9 @@ from llama_index.llms.ollama import Ollama
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core import Settings
 from functools import wraps
-import torch
+import GPUtil
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
+device = "cuda" if len(GPUtil.getAvailable()) >= 1 else "cpu"
 logger = logging.getLogger()
 logging.basicConfig(encoding="UTF-8", level=logging.INFO)
 
