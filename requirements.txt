@@ -5,3 +5,4 @@ streamlit==1.38.0
 streamlit-float==0.3.4
 tiktoken==0.7.0
 llama_index
+pytorch

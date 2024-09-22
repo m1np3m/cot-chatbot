@@ -25,7 +25,9 @@ from llama_index.llms.ollama import Ollama
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core import Settings
 from functools import wraps
+import torch
 
+device = "cuda" if torch.cuda.is_available() else "cpu"
 logger = logging.getLogger()
 logging.basicConfig(encoding="UTF-8", level=logging.INFO)
 
@@ -58,7 +60,7 @@ sources = [
 def setup():
     llm = Ollama(model="llama3-groq-tool-use", request_timeout=120.0)
     embed_model = HuggingFaceEmbedding(
-        model_name="sentence-transformers/all-MiniLM-L6-v2", device="cuda"
+        model_name="sentence-transformers/all-MiniLM-L6-v2", device=device
     )
 
     Settings.llm = llm
