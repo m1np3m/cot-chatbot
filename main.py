@@ -26,6 +26,9 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core import Settings
 from functools import wraps
 import GPUtil
+from llama_index.llms.mistralai import MistralAI
+from llama_index.core.agent import ReActAgent
+from utils import get_doc_tools
 
 device = "cuda" if len(GPUtil.getAvailable()) >= 1 else "cpu"
 logger = logging.getLogger()
@@ -51,35 +54,50 @@ float_init()
 
 
 sources = [
-    "./FAQs_v2.csv",
-    # "./chatai/data/ANZ-FAQ.pdf",
+    ("./data/COT.csv", "Coach On Tap platform"),
+    ("./data/ANZ.pdf", "ANZ Bank"),
 ]
 
 
 @st.cache_resource(show_spinner=False)
 def setup():
-    llm = Ollama(model="llama3-groq-tool-use", request_timeout=120.0)
+    device = "cuda" if len(GPUtil.getAvailable()) >= 1 else "cpu"
+
+    llm = MistralAI(
+        api_key="jiSxvwweunDg9qY8LasnngBrqPVaPMGb",
+        temperature=0.1,
+    )
+
     embed_model = HuggingFaceEmbedding(
         model_name="sentence-transformers/all-MiniLM-L6-v2", device=device
     )
-
     Settings.llm = llm
     Settings.embed_model = embed_model
 
-
-setup()
+    all_tools = prepare_tools()
+    return ReActAgent.from_tools(all_tools, verbose=True)
 
 
 @st.cache_resource(show_spinner=False)
-def create_retriever():
-    with st.spinner(text="Loading tools! This should take 1-2 minutes."):
-        documents = SimpleDirectoryReader(input_files=sources).load_data()
-    documents = Document(text="\n\n".join([doc.text for doc in documents]))
-    index = VectorStoreIndex.from_documents([documents], show_progress=True)
-    return index.as_query_engine(streaming=True, similarity_top_k=1)
+def prepare_tools():
+    sources = [
+        # ("./data/COT.csv", "Coach On Tap platform"),
+        ("./data/ANZ.pdf", "ANZ Bank"),
+    ]
+    source_to_tools_dict = {}
+    for source, desc in sources:
+        print(f"Getting tools for source: {source}")
+        vector_tool, summary_tool = get_doc_tools(source, Path(source).stem, desc)
+        source_to_tools_dict[source] = [vector_tool, summary_tool]
+
+    # Create all tools
+    all_tools = [t for s, _ in sources for t in source_to_tools_dict[s]]
+    for i in all_tools:
+        print(i.metadata)
+    return all_tools
 
 
-query_engine = create_retriever()
+agent = setup()
 
 
 # This function logs the last question and answer in the chat messages
@@ -115,38 +133,8 @@ def upload_document():
         st.rerun()
 
 
-def retry(times=3, delay_seconds=1):
-    """
-    Retry decorator that retries the function `times` times with `delay_seconds` delay between retries.
-    """
-
-    def decorator_retry(func):
-        @wraps(func)
-        def wrapper_retry(*args, **kwargs):
-            attempts = times
-            while attempts > 0:
-                try:
-                    return func(*args, **kwargs)
-                except Exception as e:
-                    print(f"Attempt {times - attempts + 1} failed: {e}")
-                    if attempts > 1:
-                        print(f"Retrying in {delay_seconds} second(s)...")
-                        time.sleep(delay_seconds)
-                attempts -= 1
-            print(f"Function {func.__name__} failed after {times} attempts.")
-
-        return wrapper_retry
-
-    return decorator_retry
-
-
-@retry(times=3, delay_seconds=1)
-def chat(message, bot):
-    return bot.query(message)
-
-
 def get_conversation_title():
-    return "Coach On Tap Chat Bot"
+    return "Chat"
 
 
 if "uploaded_pic" in st.session_state and st.session_state["uploaded_pic"]:
@@ -187,7 +175,7 @@ if prompt := st.chat_input("How can I help you?"):
 if prompt or ("rerun" in st.session_state and st.session_state["rerun"]):
 
     with st.chat_message("assistant", avatar=assistant_avatar):
-        stream = chat(prompt, query_engine)
+        stream = agent.stream_chat(prompt)
         if stream.response_gen:
             response = st.write_stream(stream.response_gen)
 
@@ -243,7 +231,7 @@ if len(st.session_state["messages"]) > 0:
 
             if "uploaded_pic" in st.session_state:
                 del st.session_state["uploaded_pic"]
-
+            agent.reset()
             st.rerun()
 
     with col3:
