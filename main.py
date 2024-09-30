@@ -29,6 +29,8 @@ import GPUtil
 from llama_index.llms.mistralai import MistralAI
 from llama_index.core.agent import ReActAgent
 from utils import get_doc_tools
+from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
+import torch
 
 device = "cuda" if len(GPUtil.getAvailable()) >= 1 else "cpu"
 logger = logging.getLogger()
@@ -55,11 +57,19 @@ float_init()
 
 @st.cache_resource(show_spinner=False)
 def setup():
-    device = "cuda" if len(GPUtil.getAvailable()) >= 1 else "cpu"
+    # device = "cuda" if len(GPUtil.getAvailable()) >= 1 else "cpu"
 
-    llm = MistralAI(
-        api_key="jiSxvwweunDg9qY8LasnngBrqPVaPMGb",
-        temperature=0.1,
+    # llm = MistralAI(
+    #     api_key="jiSxvwweunDg9qY8LasnngBrqPVaPMGb",
+    #     temperature=0.1,
+    # )
+
+    quant_config = BitsAndBytesConfig(load_in_8bit=True)
+    llm = AutoModelForCausalLM.from_pretrained(
+        "mistralai/Mistral-7B-v0.1",
+        quantization_config=quant_config,
+        device_map="auto",
+        token="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",
     )
 
     embed_model = HuggingFaceEmbedding(
