@@ -55,7 +55,7 @@ float_init()
 
 sources = [
     ("./data/COT.csv", "Coach On Tap platform"),
-    ("./data/ANZ.pdf", "ANZ Bank"),
+    # ("./data/ANZ.pdf", "ANZ Bank"),
 ]
 
 
