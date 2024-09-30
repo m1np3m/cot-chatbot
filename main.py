@@ -80,10 +80,6 @@ def setup():
 
 @st.cache_resource(show_spinner=False)
 def prepare_tools():
-    sources = [
-        # ("./data/COT.csv", "Coach On Tap platform"),
-        ("./data/ANZ.pdf", "ANZ Bank"),
-    ]
     source_to_tools_dict = {}
     for source, desc in sources:
         print(f"Getting tools for source: {source}")
