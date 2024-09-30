@@ -2,12 +2,8 @@
 
 from llama_index.core import SimpleDirectoryReader, VectorStoreIndex, SummaryIndex
 from llama_index.core.node_parser import SentenceSplitter
-from llama_index.core.tools import FunctionTool, QueryEngineTool
-from llama_index.core.vector_stores import MetadataFilters, FilterCondition
-from llama_index.core import Settings
-from llama_index.llms.ollama import Ollama
-from llama_index.embeddings.huggingface_optimum import OptimumEmbedding
-from typing import List, Optional
+from llama_index.core.tools import QueryEngineTool
+
 
 def get_doc_tools(file_path: str, name: str, desc: str) -> str:
     """Get vector query and summary query tools from a document."""
