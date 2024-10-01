@@ -42,7 +42,7 @@ def log_feedback(icon):
 
 
 @st.cache_resource(show_spinner=False)
-def setup():
+def create_agent():
     llm = MistralAI(
         api_key="jiSxvwweunDg9qY8LasnngBrqPVaPMGb",
         temperature=0.1,
@@ -54,8 +54,10 @@ def setup():
     Settings.llm = llm
     Settings.embed_model = embed_model
 
+    all_tools = prepare_tools()
+    return ReActAgent.from_tools(all_tools, verbose=False)
 
-@st.cache_data(show_spinner=False)
+
 def prepare_tools():
     sources = [
         ("./data/COT.csv", "Coach On Tap platform"),
@@ -71,7 +73,7 @@ def prepare_tools():
     all_tools = [t for s, _ in sources for t in source_to_tools_dict[s]]
     for i in all_tools:
         print(i.metadata)
-    return ReActAgent.from_tools(all_tools)
+    return all_tools
 
 
 def main():
@@ -81,8 +83,7 @@ def main():
         st.session_state["messages"] = [
             {"role": "assistant", "content": "How can I help you?"}
         ]
-    setup()
-    agent = prepare_tools()
+    agent = create_agent()
     for msg in st.session_state.messages:
         st.chat_message(msg["role"]).write(msg["content"])
     if prompt := st.chat_input(key="chat_input"):
