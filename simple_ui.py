@@ -92,7 +92,7 @@ def main():
         st.chat_message("user").write(prompt)
         response_gen = None
         try:
-            response_gen = agent.stream_chat(prompt).response_gen
+            response_gen = agent.stream_chat(prompt.strip().lower()).response_gen
         except Exception as e:
             response_gen = None
         if response_gen:
