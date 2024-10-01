@@ -56,6 +56,7 @@ def setup():
     Settings.embed_model = embed_model
 
 
+@st.cache_data(show_spinner=False)
 def prepare_tools():
     sources = [
         ("./data/COT.csv", "Coach On Tap platform"),
