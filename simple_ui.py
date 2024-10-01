@@ -43,7 +43,6 @@ def log_feedback(icon):
 
 @st.cache_resource(show_spinner=False)
 def setup():
-
     llm = MistralAI(
         api_key="jiSxvwweunDg9qY8LasnngBrqPVaPMGb",
         temperature=0.1,
@@ -72,7 +71,7 @@ def prepare_tools():
     all_tools = [t for s, _ in sources for t in source_to_tools_dict[s]]
     for i in all_tools:
         print(i.metadata)
-    return all_tools
+    return ReActAgent.from_tools(all_tools)
 
 
 def main():
@@ -83,8 +82,7 @@ def main():
             {"role": "assistant", "content": "How can I help you?"}
         ]
     setup()
-    all_tools = prepare_tools()
-    agent = ReActAgent.from_tools(all_tools)
+    agent = prepare_tools()
     for msg in st.session_state.messages:
         st.chat_message(msg["role"]).write(msg["content"])
     if prompt := st.chat_input(key="chat_input"):
