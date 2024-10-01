@@ -55,9 +55,6 @@ def setup():
     Settings.llm = llm
     Settings.embed_model = embed_model
 
-    all_tools = prepare_tools()
-    return ReActAgent.from_tools(all_tools, verbose=False)
-
 
 def prepare_tools():
     sources = [
@@ -84,7 +81,9 @@ def main():
         st.session_state["messages"] = [
             {"role": "assistant", "content": "How can I help you?"}
         ]
-    agent = setup()
+    setup()
+    all_tools = prepare_tools()
+    agent = ReActAgent.from_tools(all_tools)
     for msg in st.session_state.messages:
         st.chat_message(msg["role"]).write(msg["content"])
     if prompt := st.chat_input(key="chat_input"):
