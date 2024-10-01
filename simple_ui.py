@@ -12,6 +12,7 @@ from datetime import datetime
 import time
 from streamlit_float import *
 from loguru import logger
+import gc
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -101,6 +102,8 @@ def main():
             response = "Could you please ask me again."
             st.session_state.messages.append({"role": "assistant", "content": response})
             st.chat_message("assistant").write(response)
+        del response, response_gen
+        gc.collect()
     # If there is at least one message in the chat, we display the options
     if len(st.session_state["messages"]) > 0:
         action_buttons_container = st.container()
