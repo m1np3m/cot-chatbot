@@ -55,7 +55,7 @@ def create_agent():
     Settings.embed_model = embed_model
 
     all_tools = prepare_tools()
-    return ReActAgent.from_tools(all_tools, verbose=False)
+    return ReActAgent.from_tools(all_tools, verbose=True)
 
 
 def prepare_tools():
