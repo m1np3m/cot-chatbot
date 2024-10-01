@@ -32,6 +32,11 @@ from utils import get_doc_tools
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 import torch
 
+
+import os
+
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
 device = "cuda" if len(GPUtil.getAvailable()) >= 1 else "cpu"
 logger = logging.getLogger()
 logging.basicConfig(encoding="UTF-8", level=logging.INFO)
@@ -82,7 +87,6 @@ def setup():
     return ReActAgent.from_tools(all_tools, verbose=True)
 
 
-@st.cache_resource(show_spinner=False)
 def prepare_tools():
     sources = [
         ("./data/COT.csv", "Coach On Tap platform"),
