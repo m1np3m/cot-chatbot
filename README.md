@@ -11,5 +11,5 @@ python3 -m pip install -r requirements.txt
 ## Run UI
 
 ```bash
-streamlit run main.py 
+streamlit run main.py
 ```
