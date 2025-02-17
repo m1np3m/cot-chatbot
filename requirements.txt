@@ -1,5 +1,5 @@
 # python=3.9
-streamlit==1.38.0
+streamlit==1.42.0
 streamlit-float==0.3.4
 llama-index
 llama-index-core
