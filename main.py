@@ -19,11 +19,13 @@ device = "cuda" if len(GPUtil.getAvailable()) >= 1 else "cpu"
 # Streamlit UI Setup
 st.set_page_config(initial_sidebar_state="collapsed")
 ss = st.session_state
-st.markdown(
-    """ <style> #MainMenu {visibility: hidden;} footer {visibility: hidden;} </style> """,
-    unsafe_allow_html=True,
-)
-
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 st.markdown(
     """
 <style>
