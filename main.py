@@ -103,7 +103,7 @@ def prepare_tools():
 
 
 def main():
-    # st.title("[💬 Coach On Tap Agent](https://coachontap.com)")
+    st.title("[💬 Coach On Tap Agent](https://coachontap.com)")
 
     # Define variables in state
     if "show_comment_box" not in ss:
