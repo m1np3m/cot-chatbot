@@ -1,12 +1,11 @@
 # python=3.9
 streamlit==1.38.0
 streamlit-float==0.3.4
-tiktoken==0.7.0
-llama-index==0.11.10
-llama-index-core==0.11.10
+llama-index
+llama-index-core
 GPUtil==1.4.0
-llama-index-embeddings-huggingface==0.3.1
+llama-index-embeddings-huggingface
 streamlit-chat==0.1.1
 loguru==0.7.2
 pymongo==4.11.1
-llama-index-readers-web==0.3.5
+llama-index-readers-web
