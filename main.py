@@ -4,198 +4,171 @@ from utils import get_doc_tools
 import GPUtil
 from llama_index.core import Settings
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-from llama_index.llms.mistralai import MistralAI
 from pathlib import Path
-from streamlit_chat import message
 import os, json
-from datetime import datetime
-import time
 from streamlit_float import *
 from loguru import logger
-import gc
+
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-
+if st.secrets.get("OPENAI_API_KEY") is not None:
+    logger.debug(f"Reading openai key from streamlit secret...")
+    os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
 device = "cuda" if len(GPUtil.getAvailable()) >= 1 else "cpu"
 
-# Define a variable to enable/disable chat_input()
-if "is_chat_input_disabled" not in st.session_state:
-    st.session_state.is_chat_input_disabled = False
+# Streamlit UI Setup
+st.set_page_config(initial_sidebar_state="collapsed")
+ss = st.session_state
+st.markdown(
+    """
+<style>
+    .st-emotion-cache-janbn0 {
+        flex-direction: row-reverse;
+        text-align: right;
+    }
+</style>
+""",
+    unsafe_allow_html=True,
+)
 
 
-# This function logs the last question and answer in the chat messages
-def log_feedback(icon):
-    # We display a nice toast
-    st.toast("Thanks for your feedback!", icon="👌")
-
-    # We retrieve the last question and answer
-    last_messages = json.dumps(st.session_state["messages"][-2:])
-
-    # We record the timestamp
-    activity = datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ": "
-
-    # And include the messages
-    activity += "positive" if icon == "👍" else "negative"
-    activity += ": " + last_messages
-
-    # And log everything
-    logger.info(activity)
+def save_feedback(index):
+    feedback = ss[f"feedback_{index}"]
+    trace = ss.get(f"trace_{index}")
+    ss.messages[index]["feedback"] = feedback
+    if int(feedback) == 0:
+        ss.show_comment_box = index
+    elif trace:
+        ss.show_comment_box = None
 
 
-@st.cache_resource(show_spinner=False)
+def save_comment(index):
+    comment = ss.get(f"comment_{index}", "")
+    ss.messages[index]["comment"] = comment
+    ss.show_comment_box = None  # Close comment box
+    feedback = ss.messages[index]["feedback"]
+    trace = ss.get(f"trace_{index}")
+
+
+from llama_index.agent.openai import OpenAIAgent
+from llama_index.llms.openai import OpenAI
+
+
+@st.cache_resource(show_spinner="Model loading...")
 def create_agent():
-    llm = MistralAI(
-        api_key="jiSxvwweunDg9qY8LasnngBrqPVaPMGb",
-        temperature=0.1,
+    llm = OpenAI(
+        model="gpt-4o-mini",
+        temperature=0.5,
     )
 
-    embed_model = HuggingFaceEmbedding(
-        model_name="sentence-transformers/all-MiniLM-L6-v2", device=device
-    )
+    embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-m3", device=device)
     Settings.llm = llm
     Settings.embed_model = embed_model
 
     all_tools = prepare_tools()
-    return ReActAgent.from_tools(all_tools, verbose=True)
+    return OpenAIAgent.from_tools(
+        all_tools,
+        system_prompt=""" \
+You are an agent designed to answer queries about the documentation.\n
+Important Notes:\n
+1/ Always try to using the same language with user to answer.\n
+2/ Please always use the tools provided to answer a question. Do not rely on prior knowledge.
+
+""",
+        verbose=True,
+    )
 
 
 def prepare_tools():
     sources = [
-        ("./data/COT.csv", "Coach On Tap platform"),
-        # ("./data/ANZ.pdf", "ANZ Bank"),
+        # ("./data/COT.csv", "Coach On Tap platform"),
+        ("./data/faqs_docs.pkl", "Coach On Tap platform"),
     ]
     source_to_tools_dict = {}
     for source, desc in sources:
-        print(f"Getting tools for source: {source}")
-        vector_tool, summary_tool = get_doc_tools(source, Path(source).stem, desc)
+        logger.info(f"Getting tools for source: {source}")
+        vector_tool, summary_tool = get_doc_tools(
+            source,
+            Path(source).stem,
+            desc,
+            extra_sources=["https://www.coachontap.co/about-us"],
+        )
         source_to_tools_dict[source] = [vector_tool, summary_tool]
 
     # Create all tools
     all_tools = [t for s, _ in sources for t in source_to_tools_dict[s]]
     for i in all_tools:
-        print(i.metadata)
+        logger.info(i.metadata)
     return all_tools
 
 
 def main():
-    st.title("💬 FAQs Chatbot")
-    st.caption("[Coach On Tap](https://coachontap.co)")
-    if "messages" not in st.session_state:
-        st.session_state["messages"] = [
-            {"role": "assistant", "content": "How can I help you?"}
+    # st.title("[💬 Coach On Tap Agent](https://coachontap.com)")
+
+    # Define variables in state
+    if "show_comment_box" not in ss:
+        ss.show_comment_box = None
+    if "trace_id" not in ss:
+        ss.trace_id = None
+    if "is_show_feedback" not in ss:
+        ss.is_show_feedback = False
+    if "messages" not in ss:
+        ss["messages"] = [
+            {
+                "role": "assistant",
+                "content": "Xin chào, tôi có thể giúp gì cho bạn ?",
+            }
         ]
+
     agent = create_agent()
-    for msg in st.session_state.messages:
-        st.chat_message(msg["role"]).write(msg["content"])
+
+    ## Display messages
+    for i, message in enumerate(ss.messages):
+        st.chat_message(message["role"]).write(message["content"])
+        if message["role"] == "assistant":
+            feedback = message.get("feedback", None)
+            ss[f"feedback_{i}"] = feedback
+            st.feedback(
+                "thumbs",
+                key=f"feedback_{i}",
+                disabled=feedback is not None,
+                on_change=save_feedback,
+                args=[i],
+            )
+            # Show comment box if "👎" is clicked
+            if ss.show_comment_box == i:
+                st.text_area(
+                    "Có thể cải thiện được điều gì?",
+                    key=f"comment_{i}",
+                    placeholder="Góp ý ở đây...",
+                    on_change=save_comment,
+                    args=[i],
+                )
     if prompt := st.chat_input(key="chat_input"):
-        st.session_state.messages.append({"role": "user", "content": prompt})
         st.chat_message("user").write(prompt)
+        ss.messages.append({"role": "user", "content": prompt})
+
         response_gen = None
         try:
-            response_gen = agent.stream_chat(prompt.strip().lower()).response_gen
+            with st.spinner(text="Thinking..."):
+                response_gen = agent.stream_chat(prompt.strip().lower()).response_gen
         except Exception as e:
             response_gen = None
         if response_gen:
             response = st.chat_message("assistant").write_stream(response_gen)
-            st.session_state.messages.append({"role": "assistant", "content": response})
         else:
             response = "Could you please ask me again."
-            st.session_state.messages.append({"role": "assistant", "content": response})
             st.chat_message("assistant").write(response)
-        del response, response_gen
-        gc.collect()
-    # If there is at least one message in the chat, we display the options
-    if len(st.session_state["messages"]) > 0:
-        action_buttons_container = st.container()
-        action_buttons_container.float(
-            "bottom: 7.2rem;background-color: var(--default-backgroundColor); padding-top: 1rem;"
+
+        n_messages = len(ss.messages)
+
+        st.feedback(
+            "thumbs",
+            key=f"feedback_{n_messages}",
+            on_change=save_feedback,
+            args=[n_messages],
         )
-
-        # We set the space between the icons thanks to a share of 100
-        cols_dimensions = [14.5, 8.6, 8.7, 14.9, 7, 9.1, 14.9]
-        cols_dimensions.append(100 - sum(cols_dimensions))
-
-        col0, col1, col2, col3, col4, col5, col6, col7 = (
-            action_buttons_container.columns(cols_dimensions)
-        )
-
-        # with col1:
-
-        #     # Converts the list of messages into a JSON Bytes format
-        #     json_messages = json.dumps(st.session_state["messages"]).encode("utf-8")
-
-        #     # And the corresponding Download button
-        #     st.download_button(
-        #         label="📥 Save!",
-        #         data=json_messages,
-        #         file_name="chat_conversation.json",
-        #         mime="application/json",
-        #     )
-
-        with col0:
-
-            # We set the message back to 0 and rerun the app
-            # (this part could probably be improved with the cache option)
-            if st.button("Clear 🧹"):
-                del st.session_state["messages"]
-                if "uploaded_pic" in st.session_state:
-                    del st.session_state["uploaded_pic"]
-                agent.reset()
-                st.cache_resource.clear()
-                st.rerun()
-
-        # with col3:
-
-        #     if st.button("🎨"):
-        #         upload_document()
-
-        # with col4:
-        #     icon = "🔁"
-        #     if st.button(icon):
-        #         st.session_state["rerun"] = True
-        #         st.rerun()
-
-        with col1:
-            icon = "👍"
-
-            # The button will trigger the logging function
-            if st.button(icon):
-                log_feedback(icon)
-
-        with col2:
-            icon = "👎"
-
-            # The button will trigger the logging function
-            if st.button(icon):
-                log_feedback(icon)
-
-        # with col7:
-
-        #     # We initiate a tokenizer
-        #     enc = tiktoken.get_encoding("cl100k_base")
-
-        #     # We encode the messages
-        #     tokenized_full_text = enc.encode(
-        #         " ".join([item["content"] for item in st.session_state["messages"]])
-        #     )
-
-        #     # And display the corresponding number of tokens
-        #     label = f"💬 {len(tokenized_full_text)} tokens"
-        #     st.link_button(label, "https://platform.openai.com/tokenizer")
-
-    else:
-
-        # At the first run of a session, we temporarly display a message
-        if "disclaimer" not in st.session_state:
-            with st.empty():
-                for seconds in range(3):
-                    st.warning(
-                        "‎ You can click on 👍 or 👎 to provide feedback regarding the quality of responses.",
-                        icon="💡",
-                    )
-                    time.sleep(1)
-                st.write("")
-                st.session_state["disclaimer"] = True
+        ss.messages.append({"role": "assistant", "content": response})
 
 
 if __name__ == "__main__":
