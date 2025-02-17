@@ -20,23 +20,16 @@ device = "cuda" if len(GPUtil.getAvailable()) >= 1 else "cpu"
 st.set_page_config(initial_sidebar_state="collapsed")
 ss = st.session_state
 hide_streamlit_style = """
-            <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            </style>
-            """
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-st.markdown(
-    """
 <style>
-    .st-emotion-cache-janbn0 {
-        flex-direction: row-reverse;
-        text-align: right;
-    }
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+.st-emotion-cache-janbn0 {
+    flex-direction: row-reverse;
+    text-align: right;
+}
 </style>
-""",
-    unsafe_allow_html=True,
-)
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
 def save_feedback(index):
