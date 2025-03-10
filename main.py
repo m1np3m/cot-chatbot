@@ -8,6 +8,7 @@ from pathlib import Path
 import os, json
 from streamlit_float import *
 from loguru import logger
+from llama_index.core.llms import ChatMessage, MessageRole
 
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -117,8 +118,52 @@ def main():
                 "content": "Xin chào, tôi có thể giúp gì cho bạn ?",
             }
         ]
-
+    # Create two columns with different widths
+    col1, col2 = st.columns([0.9, 0.1])
     agent = create_agent()
+
+    def reset_conversation():
+        ss.messages = None
+        agent.reset()
+
+    # Add clear button in the right column
+    with col2:
+        if st.button("🗑️", help="Clear conversation", on_click=reset_conversation):
+            # Clear all session state variables
+            for key in list(ss.keys()):
+                del ss[key]
+
+            # Reinitialize essential variables
+            ss.show_comment_box = None
+            ss.trace_id = None
+            ss.is_show_feedback = False
+            ss.messages = [
+                {
+                    "role": "assistant",
+                    "content": "Xin chào, tôi có thể giúp gì cho bạn ?",
+                }
+            ]
+            st.rerun()
+
+    def chat_with_agent(query):
+        # Get the last 6 messages (3 turns) from the conversation
+        last_messages = ss.messages[-6:] if len(ss.messages) > 6 else ss.messages
+
+        # Convert messages to ChatMessage format
+        chat_history = [
+            ChatMessage(
+                role=(
+                    MessageRole.ASSISTANT
+                    if msg["role"] == "assistant"
+                    else MessageRole.USER
+                ),
+                content=msg["content"],
+            )
+            for msg in last_messages
+        ]
+        # Call the agent's chat method with the current chat history
+        response = agent.stream_chat(query, chat_history=chat_history)
+        return response.response_gen
 
     ## Display messages
     for i, message in enumerate(ss.messages):
@@ -149,7 +194,7 @@ def main():
         response_gen = None
         try:
             with st.spinner(text="Thinking..."):
-                response_gen = agent.stream_chat(prompt.strip().lower()).response_gen
+                response_gen = chat_with_agent(prompt.strip().lower())
         except Exception as e:
             response_gen = None
         if response_gen:
