@@ -1,12 +1,19 @@
 # TODO: abstract all of this into a function that takes in a PDF file name
 
+from logging import Logger
 from llama_index.core import SimpleDirectoryReader, VectorStoreIndex, SummaryIndex
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.tools import QueryEngineTool
 from llama_index.readers.web import SimpleWebPageReader
 from pymongo import MongoClient
-from llama_index.core import Document
+from llama_index.core import Document, Settings
 import joblib as jl
+from loguru import logger
+from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.readers.web import FireCrawlWebReader
+import os
+
+Settings.embed_model = OpenAIEmbedding(model="text-embedding-3-small")
 
 mongo_uri = "mongodb://admin-prod:419Gjjkw084XeqXU@ec2-52-3-143-218.compute-1.amazonaws.com:27017/"
 
@@ -82,8 +89,18 @@ def get_doc_tools(file_path: str, name: str, desc: str, **kwargs) -> str:
     else:
         documents = SimpleDirectoryReader(input_files=[file_path]).load_data()
     if extra_sources and len(extra_sources) > 0:
-        ex_documents = SimpleWebPageReader(html_to_text=True).load_data(extra_sources)
-        documents.extend(ex_documents)
+        # Initialize FireCrawlWebReader to crawl a website
+        firecrawl_reader = FireCrawlWebReader(
+            api_key=os.environ[
+                "FIRECRAWL_API_KEY"
+            ],  # Rep;lace with your actual API key from https://www.firecrawl.dev/
+            mode="scrape",  # Choose between "crawl" and "scrape" for single page scraping
+        )
+        for source in extra_sources:
+            # Load documents from a single page URL
+            ex_documents = firecrawl_reader.load_data(url=source)
+            documents.extend(ex_documents)
+
     splitter = SentenceSplitter(chunk_size=1024)
     nodes = splitter.get_nodes_from_documents(documents)
 

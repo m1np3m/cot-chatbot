@@ -1,5 +1,4 @@
 import streamlit as st
-from llama_index.core.agent import ReActAgent
 from utils import get_doc_tools
 import GPUtil
 from llama_index.core import Settings
@@ -15,6 +14,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 if st.secrets.get("OPENAI_API_KEY") is not None:
     logger.debug(f"Reading openai key from streamlit secret...")
     os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
+    os.environ["FIRECRAWL_API_KEY"] = st.secrets["FIRECRAWL_API_KEY"]
 device = "cuda" if len(GPUtil.getAvailable()) >= 1 else "cpu"
 
 # Streamlit UI Setup
@@ -65,9 +65,7 @@ def create_agent():
     )
 
     Settings.llm = llm
-    Settings.embed_model = OpenAIEmbedding(
-        model_name="text-embedding-3-small", dimensions=1536
-    )
+    Settings.embed_model = OpenAIEmbedding(model="text-embedding-3-small")
     chat_history = [
         ChatMessage(
             role=(MessageRole.SYSTEM),
