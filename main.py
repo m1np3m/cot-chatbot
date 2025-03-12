@@ -57,9 +57,6 @@ from llama_index.llms.openai import OpenAI
 
 @st.cache_resource(
     show_spinner="Model loading...",
-    allow_output_mutation=True,
-    max_entries=10,
-    ttl=3600,
 )
 def create_agent():
     llm = OpenAI(
