@@ -65,18 +65,21 @@ def create_agent():
     embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-m3", device=device)
     Settings.llm = llm
     Settings.embed_model = embed_model
-
+    chat_history = [
+        ChatMessage(
+            role=(MessageRole.SYSTEM),
+            content=""" \
+You are an agent designed to answer queries about the documentation.\n
+Important Notes:\n
+1/ Always try to answer in the same language with user.\n
+2/ Please always use the tools provided to answer a question. Do not rely on prior knowledge.""",
+        )
+    ]
     all_tools = prepare_tools()
     return OpenAIAgent.from_tools(
         all_tools,
-        system_prompt=""" \
-You are an agent designed to answer queries about the documentation.\n
-Important Notes:\n
-1/ Always try to using the same language with user to answer.\n
-2/ Please always use the tools provided to answer a question. Do not rely on prior knowledge.
-
-""",
         verbose=True,
+        chat_history=chat_history,
     )
 
 
