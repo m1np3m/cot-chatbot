@@ -4,7 +4,6 @@ from logging import Logger
 from llama_index.core import SimpleDirectoryReader, VectorStoreIndex, SummaryIndex
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.tools import QueryEngineTool
-from llama_index.readers.web import SimpleWebPageReader
 from pymongo import MongoClient
 from llama_index.core import Document, Settings
 import joblib as jl
