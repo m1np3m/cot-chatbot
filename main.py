@@ -3,12 +3,12 @@ from llama_index.core.agent import ReActAgent
 from utils import get_doc_tools
 import GPUtil
 from llama_index.core import Settings
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from pathlib import Path
 import os, json
 from streamlit_float import *
 from loguru import logger
 from llama_index.core.llms import ChatMessage, MessageRole
+from llama_index.embeddings.openai import OpenAIEmbedding
 
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -55,16 +55,22 @@ from llama_index.agent.openai import OpenAIAgent
 from llama_index.llms.openai import OpenAI
 
 
-@st.cache_resource(show_spinner="Model loading...")
+@st.cache_resource(
+    show_spinner="Model loading...",
+    allow_output_mutation=True,
+    max_entries=10,
+    ttl=3600,
+)
 def create_agent():
     llm = OpenAI(
         model="gpt-4o-mini",
         temperature=0.5,
     )
 
-    embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-m3", device=device)
     Settings.llm = llm
-    Settings.embed_model = embed_model
+    Settings.embed_model = OpenAIEmbedding(
+        model_name="text-embedding-3-small", dimensions=1536
+    )
     chat_history = [
         ChatMessage(
             role=(MessageRole.SYSTEM),
