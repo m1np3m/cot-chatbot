@@ -61,7 +61,7 @@ from llama_index.llms.openai import OpenAI
 def create_agent():
     llm = OpenAI(
         model="gpt-4o-mini",
-        temperature=0.5,
+        temperature=0.0,
     )
 
     Settings.llm = llm
