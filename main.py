@@ -1,6 +1,5 @@
 import streamlit as st
 from utils import get_doc_tools
-import GPUtil
 from llama_index.core import Settings
 from pathlib import Path
 import os, json
@@ -15,7 +14,6 @@ if st.secrets.get("OPENAI_API_KEY") is not None:
     logger.debug(f"Reading openai key from streamlit secret...")
     os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
     os.environ["FIRECRAWL_API_KEY"] = st.secrets["FIRECRAWL_API_KEY"]
-device = "cuda" if len(GPUtil.getAvailable()) >= 1 else "cpu"
 
 # Streamlit UI Setup
 st.set_page_config(initial_sidebar_state="collapsed")
