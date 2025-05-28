@@ -86,7 +86,6 @@ Important Notes:\n
 
 def prepare_tools():
     sources = [
-        # ("./data/COT.csv", "Coach On Tap platform"),
         ("./data/faqs_docs.pkl", "Coach On Tap platform"),
     ]
     source_to_tools_dict = {}

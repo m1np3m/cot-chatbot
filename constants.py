@@ -21,7 +21,6 @@ CONFLUENCE_TOKEN = os.environ.get(
 )
 CONFLUENCE_BASE_URL = os.environ.get(
     "CONFLUENCE_BASE_URL",
-    "https://veepme.atlassian.net",
 )
 CONFLUENCE_SPACES_TO_LOAD = os.environ.get("CONFLUENCE_SPACES_TO_LOAD", "DAL").split(
     ","

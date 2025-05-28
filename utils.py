@@ -11,10 +11,17 @@ from loguru import logger
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.readers.web import FireCrawlWebReader
 import os
+import streamlit as st
 
 Settings.embed_model = OpenAIEmbedding(model="text-embedding-3-small")
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+if st.secrets.get("OPENAI_API_KEY") is not None:
+    logger.debug(f"Reading openai key from streamlit secret...")
+    os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
+    os.environ["FIRECRAWL_API_KEY"] = st.secrets["FIRECRAWL_API_KEY"]
+    os.environ["MONGO_URI"] = st.secrets["MONGO_URI"]
 
-mongo_uri = "mongodb://admin-prod:419Gjjkw084XeqXU@ec2-52-3-143-218.compute-1.amazonaws.com:27017/"
+mongo_uri = os.environ["MONGO_URI"]
 
 # MongoDB connection details
 database_name = "COT"
@@ -94,6 +101,7 @@ def get_doc_tools(file_path: str, name: str, desc: str, **kwargs) -> str:
                 "FIRECRAWL_API_KEY"
             ],  # Rep;lace with your actual API key from https://www.firecrawl.dev/
             mode="scrape",  # Choose between "crawl" and "scrape" for single page scraping
+            params={},  # Optional additional parameters
         )
         for source in extra_sources:
             # Load documents from a single page URL
