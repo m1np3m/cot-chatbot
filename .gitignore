@@ -5,7 +5,7 @@ __pycache__/
 hand-on/*
 # C extensions
 *.so
-
+hand-on/*
 # Distribution / packaging
 .Python
 build/

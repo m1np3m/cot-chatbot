@@ -93,7 +93,12 @@ def prepare_tools():
             source,
             Path(source).stem,
             desc,
-            extra_sources=["https://www.coachontap.co/about-us"],
+            extra_sources=[
+                "https://www.coachontap.co/about-us",
+                "https://www.coachontap.co/terms-and-conditions",
+                "https://www.coachontap.co/privacy-policy",
+                "https://www.coachontap.co/privacy-policy-google-api",
+            ],
         )
         source_to_tools_dict[source] = [vector_tool, summary_tool]
 

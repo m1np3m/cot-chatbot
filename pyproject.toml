@@ -3,12 +3,15 @@ name = "demo-chatbot"
 version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
-    "firecrawl-py==2.7.0",
-    "gputil>=1.4.0",
+    "firecrawl-py==1.12.0",
+    "gputil==1.4.0",
+    "ipykernel>=6.29.5",
     "llama-index>=0.12.37",
+    "llama-index-core>=0.12.37",
+    "llama-index-embeddings-huggingface>=0.5.4",
     "llama-index-readers-web>=0.4.1",
-    "loguru>=0.7.3",
-    "pymongo>=4.13.0",
+    "loguru==0.7.2",
+    "pymongo==4.11.1",
     "streamlit==1.42.0",
     "streamlit-float==0.3.4",
 ]
