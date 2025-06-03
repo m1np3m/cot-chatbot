@@ -76,7 +76,7 @@ def generate_faqs_document(doc_path: str):
                 },
             )
         )
-    jl.dump(docs, doc_path)
+    # jl.dump(docs, doc_path)
     return docs
 
 
