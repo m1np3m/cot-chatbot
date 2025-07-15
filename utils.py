@@ -92,6 +92,7 @@ def get_doc_tools(file_path: str, name: str, desc: str, **kwargs) -> str:
             documents = joblib.load(file_path)
         except:
             documents = generate_faqs_document(doc_path=file_path)
+            joblib.dump(documents, file_path)
     else:
         documents = SimpleDirectoryReader(input_files=[file_path]).load_data()
     if extra_sources and len(extra_sources) > 0:
