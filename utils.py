@@ -95,7 +95,7 @@ def get_doc_tools(file_path: str, name: str, desc: str, **kwargs) -> str:
             joblib.dump(documents, file_path)
     else:
         documents = SimpleDirectoryReader(input_files=[file_path]).load_data()
-    if extra_sources and len(extra_sources) > 0:
+    if extra_sources is not None and len(extra_sources) > 0:
         # Initialize FireCrawlWebReader to crawl a website
         firecrawl_reader = FireCrawlWebReader(
             api_key=os.environ[
@@ -105,6 +105,7 @@ def get_doc_tools(file_path: str, name: str, desc: str, **kwargs) -> str:
             params={},  # Optional additional parameters
         )
         for source in extra_sources:
+            logger.debug(f"Loading extra sources: {source}")
             # Load documents from a single page URL
             ex_documents = firecrawl_reader.load_data(url=source)
             documents.extend(ex_documents)
