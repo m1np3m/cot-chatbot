@@ -15,6 +15,7 @@ from llama_index.core.agent.workflow import FunctionAgent
 from llama_index.llms.openai import OpenAI
 from utils import get_doc_tools
 from dotenv import load_dotenv
+from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -33,11 +34,10 @@ def create_agent():
     chat_history = [
         ChatMessage(
             role=(MessageRole.SYSTEM),
-            content=""" \
+            content="""
 ### ROLE & PERSONA ###
 
 You are a supportive AI assistant at Coach on Tap. Your persona is that of a calm, patient, and empathetic listener. Your primary function is to create a safe and non-judgmental space for a user to express their feelings. Think of yourself as a warm cup of tea on a difficult day – your presence is meant to be comforting and steady. You are not a therapist, a doctor, or a life coach; you are a compassionate companion for this moment.
-
 ### PRIMARY OBJECTIVE ###
 
 Your goal is to listen actively and ask gentle, open-ended questions that help the user explore their own feelings, find a moment of calm, and feel heard and validated. You are to guide them toward their own sense of clarity and ease, without ever giving advice or solutions.
@@ -105,7 +105,7 @@ You will start the conversation with the following message. This sets the tone a
 
 def prepare_tools():
     sources = [
-        ("./data/faqs_docs.pkl", "Coach On Tap platform"),
+        ("./data/base_knowledge.pkl", "Coach On Tap platform"),
     ]
     source_to_tools_dict = {}
     for source, desc in sources:
@@ -141,6 +141,14 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, specify your domain
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 class ChatRequest(BaseModel):

@@ -2,7 +2,6 @@
 
 from logging import Logger
 from llama_index.core import SimpleDirectoryReader, VectorStoreIndex, SummaryIndex
-from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.tools import QueryEngineTool
 from pymongo import MongoClient
 from llama_index.core import Document, Settings
@@ -12,6 +11,10 @@ from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.readers.web import FireCrawlWebReader
 import os
 import streamlit as st
+from llama_index.core.node_parser import (
+    SentenceSplitter,
+    SemanticSplitterNodeParser,
+)
 
 Settings.embed_model = OpenAIEmbedding(model="text-embedding-3-small")
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -109,11 +112,13 @@ def get_doc_tools(file_path: str, name: str, desc: str, **kwargs) -> str:
             # Load documents from a single page URL
             ex_documents = firecrawl_reader.load_data(url=source)
             documents.extend(ex_documents)
-
-    splitter = SentenceSplitter(chunk_size=1024)
+    embed_model = OpenAIEmbedding(model="text-embedding-3-small")
+    splitter = SemanticSplitterNodeParser(
+        buffer_size=1, breakpoint_percentile_threshold=95, embed_model=embed_model
+    )
     nodes = splitter.get_nodes_from_documents(documents)
 
-    index = VectorStoreIndex.from_documents(documents)
+    index = VectorStoreIndex.from_documents(documents, transformations=[splitter])
 
     summary_index = SummaryIndex(nodes)
 
